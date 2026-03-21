@@ -1,0 +1,19 @@
+# Terraform
+oracle-cloud/.terraform/
+oracle-cloud/terraform.tfstate
+oracle-cloud/terraform.tfstate.backup
+oracle-cloud/.terraform.lock.hcl
+
+# Environment
+.env
+*.env.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.idea/
+.vscode/
+*.swp
+*.swo

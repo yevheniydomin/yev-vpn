@@ -1,0 +1,24 @@
+services:
+  vpn:
+    build: ./docker
+    container_name: family-vpn
+    restart: unless-stopped
+    network_mode: host
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    volumes:
+      - vpn-data:/data
+    environment:
+      - CLIENT_COUNT=${CLIENT_COUNT:-5}
+      - XRAY_PORT=${XRAY_PORT:-443}
+      - XRAY_SNI=${XRAY_SNI:-www.microsoft.com}
+      - AWG_PORT=${AWG_PORT:-8443}
+      - AWG_SUBNET=${AWG_SUBNET:-10.10.10.0/24}
+      - DNS=${DNS:-1.1.1.1,8.8.8.8}
+      # Set SERVER_IP to override auto-detection
+      # - SERVER_IP=1.2.3.4
+
+volumes:
+  vpn-data:
