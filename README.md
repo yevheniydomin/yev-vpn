@@ -32,8 +32,8 @@ Standard VPNs (OpenVPN, WireGuard) are trivially blocked by Russia's TSPU. These
 SSH into your server, then:
 
 ```bash
-git clone <your-repo-url>
-cd family-vpn
+git clone https://github.com/yevheniydomin/yev-vpn.git
+cd yev-vpn
 
 # Build the image (~5 min first time, ~30s after)
 make build
