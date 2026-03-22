@@ -4,6 +4,8 @@ services:
     container_name: family-vpn
     restart: unless-stopped
     network_mode: host
+    logging:
+      driver: none
     cap_add:
       - NET_ADMIN
     devices:

@@ -126,7 +126,7 @@ generate_configs() {
   # ── XRay server config ──
   cat > "$DATA_DIR/xray-config.json" <<EOF
 {
-  "log": { "loglevel": "warning", "access": "none", "error": "/var/log/xray/error.log" },
+  "log": { "loglevel": "none", "access": "none", "error": "none" },
   "inbounds": [{
     "port": $XRAY_PORT,
     "protocol": "vless",
@@ -146,7 +146,7 @@ generate_configs() {
         "shortIds": ["$XRAY_SID", ""]
       }
     },
-    "sniffing": { "enabled": true, "destOverride": ["http", "tls", "quic"] }
+    "sniffing": { "enabled": true, "destOverride": ["http", "tls", "quic"], "routeOnly": true }
   }],
   "outbounds": [
     { "protocol": "freedom", "tag": "direct" },
@@ -155,7 +155,6 @@ generate_configs() {
   "routing": { "rules": [{ "type": "field", "outboundTag": "block", "protocol": ["bittorrent"] }] }
 }
 EOF
-  mkdir -p /var/log/xray
 
   # ── VLESS client link ──
   VLESS_LINK="vless://$XRAY_UUID@$SERVER_IP:$XRAY_PORT?encryption=none&flow=xtls-rprx-vision&security=reality&sni=$XRAY_SNI&fp=chrome&pbk=$XRAY_PUB&sid=$XRAY_SID&type=tcp#Family-VPN"
