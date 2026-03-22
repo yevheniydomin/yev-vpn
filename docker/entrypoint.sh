@@ -33,6 +33,12 @@ if [ "${1}" = "configs" ]; then
     echo "--- $(basename "$f") ---"
     cat "$f"
     echo ""
+    QR="${f%.conf}-qr.txt"
+    if [ -f "$QR" ]; then
+      echo "--- $(basename "$QR") ---"
+      cat "$QR"
+      echo ""
+    fi
   done
   exit 0
 fi
