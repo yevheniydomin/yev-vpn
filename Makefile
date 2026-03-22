@@ -56,24 +56,33 @@ destroy: ## Destroy the cloud VPN instance
 		-var="shape=$(SHAPE)" \
 		-var="availability_domain_index=$(AD_INDEX)"
 
-status: ## Check cloud deployment status
-	@IP=$$(cd oracle-cloud && terraform output -raw instance_public_ip 2>/dev/null) && \
+# Helper: resolve server IP from SERVER_IP env var or terraform state
+define get_ip
+$${SERVER_IP:-$$(cd oracle-cloud && terraform output -raw instance_public_ip 2>&1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' || echo "")}
+endef
+
+status: ## Check cloud deployment status (SERVER_IP=x.x.x.x if no tf state)
+	@IP=$(get_ip); \
+	if [ -z "$$IP" ]; then echo "Error: Set SERVER_IP=x.x.x.x (no terraform state found)"; exit 1; fi; \
 	echo "Server IP: $$IP" && \
 	ssh -o ConnectTimeout=5 -i $(SSH_PRIVATE) ubuntu@$$IP \
 		'cat /var/log/vpn-deploy.log 2>/dev/null; echo "---"; sudo docker ps --format "{{.Names}}: {{.Status}}" 2>/dev/null || echo "Docker not ready yet"'
 
 cloud-configs: ## Retrieve client configs from cloud instance
-	@IP=$$(cd oracle-cloud && terraform output -raw instance_public_ip 2>/dev/null) && \
+	@IP=$(get_ip); \
+	if [ -z "$$IP" ]; then echo "Error: Set SERVER_IP=x.x.x.x"; exit 1; fi; \
 	ssh -i $(SSH_PRIVATE) ubuntu@$$IP \
 		'sudo docker compose -f /opt/family-vpn/docker-compose.yml exec vpn /entrypoint.sh configs'
 
 cloud-logs: ## Follow VPN logs on cloud instance
-	@IP=$$(cd oracle-cloud && terraform output -raw instance_public_ip 2>/dev/null) && \
+	@IP=$(get_ip); \
+	if [ -z "$$IP" ]; then echo "Error: Set SERVER_IP=x.x.x.x"; exit 1; fi; \
 	ssh -i $(SSH_PRIVATE) ubuntu@$$IP \
 		'sudo docker compose -f /opt/family-vpn/docker-compose.yml logs --tail 50 -f'
 
 cloud-rebuild: ## Rebuild and restart VPN on cloud (keeps IP and keys)
-	@IP=$${SERVER_IP:-$$(cd oracle-cloud && terraform output -raw instance_public_ip 2>/dev/null)}; \
+	@IP=$(get_ip); \
+	if [ -z "$$IP" ]; then echo "Error: Set SERVER_IP=x.x.x.x"; exit 1; fi; \
 	echo "Uploading files to $$IP..." && \
 	scp -i $(SSH_PRIVATE) docker/Dockerfile docker/entrypoint.sh ubuntu@$$IP:/tmp/ && \
 	scp -i $(SSH_PRIVATE) docker-compose.yml ubuntu@$$IP:/tmp/ && \
