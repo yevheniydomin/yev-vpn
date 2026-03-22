@@ -1,4 +1,4 @@
-.PHONY: build up down configs logs restart reset deploy destroy status cloud-configs cloud-logs help
+.PHONY: build up down configs logs restart reset deploy destroy status cloud-configs cloud-logs cloud-rebuild help
 
 COMPARTMENT_ID ?= $(shell grep tenancy ~/.oci/config 2>/dev/null | head -1 | cut -d= -f2)
 SHAPE          ?= VM.Standard.E2.1.Micro
@@ -71,3 +71,19 @@ cloud-logs: ## Follow VPN logs on cloud instance
 	@IP=$$(cd oracle-cloud && terraform output -raw instance_public_ip 2>/dev/null) && \
 	ssh -i $(SSH_PRIVATE) ubuntu@$$IP \
 		'sudo docker compose -f /opt/family-vpn/docker-compose.yml logs --tail 50 -f'
+
+cloud-rebuild: ## Rebuild and restart VPN on cloud (keeps IP and keys)
+	@IP=$${SERVER_IP:-$$(cd oracle-cloud && terraform output -raw instance_public_ip 2>/dev/null)}; \
+	echo "Uploading files to $$IP..." && \
+	scp -i $(SSH_PRIVATE) docker/Dockerfile docker/entrypoint.sh ubuntu@$$IP:/tmp/ && \
+	scp -i $(SSH_PRIVATE) docker-compose.yml ubuntu@$$IP:/tmp/ && \
+	ssh -i $(SSH_PRIVATE) ubuntu@$$IP '\
+		sudo cp /tmp/Dockerfile /opt/family-vpn/docker/Dockerfile && \
+		sudo cp /tmp/entrypoint.sh /opt/family-vpn/docker/entrypoint.sh && \
+		sudo cp /tmp/docker-compose.yml /opt/family-vpn/docker-compose.yml && \
+		sudo chmod +x /opt/family-vpn/docker/entrypoint.sh && \
+		cd /opt/family-vpn && \
+		sudo docker compose down && \
+		sudo docker compose build && \
+		sudo docker compose up -d' && \
+	echo "Rebuild complete. VPN is starting on $$IP"
