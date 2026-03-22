@@ -57,8 +57,9 @@ sysctl -w net.ipv6.conf.all.forwarding=1 >/dev/null 2>&1 || true
 
 iptables -t nat -C POSTROUTING -o "$PRIMARY_IFACE" -j MASQUERADE 2>/dev/null || \
   iptables -t nat -A POSTROUTING -o "$PRIMARY_IFACE" -j MASQUERADE
+# Insert ACCEPT before OCI's default REJECT rule (append would place it after)
 iptables -C FORWARD -j ACCEPT 2>/dev/null || \
-  iptables -A FORWARD -j ACCEPT
+  iptables -I FORWARD 1 -j ACCEPT
 
 # ─── Generate secrets (first run only) ──────────────────────────────────────
 generate_secrets() {
